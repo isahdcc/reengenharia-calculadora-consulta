@@ -39,3 +39,33 @@ jobs:
         with:
           args: >
             -Dsonar.projectVersion=${{ github.ref_name }}
+
+  security:
+    name: Quality Gate (Trivy)
+    runs-on: ubuntu-latest
+    needs: sonarqube
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Build da imagem Docker
+        run: docker build -t calculadora-consulta:${{ github.ref_name }} .
+
+      - name: Trivy - bibliotecas e arquivos
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+
+      - name: Trivy - imagem Docker
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: calculadora-consulta:${{ github.ref_name }}
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
